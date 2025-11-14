@@ -1,0 +1,10 @@
+# Ignorar archivos binarios
+*.out
+*.exe
+main
+
+# Ignorar configuración de VS Code
+.vscode/
+
+# Otros archivos temporales
+*.log
