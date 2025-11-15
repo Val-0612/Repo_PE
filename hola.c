@@ -4,5 +4,6 @@ int main(){
     printf("Hola Diego\n");
     printf("Ahora si, esta es la buena\n");
     printf("ok, esta si es la de verdad XD\n");
+    printf("Ahora con el git integrado de vs code\n");
     return 0;
 }
