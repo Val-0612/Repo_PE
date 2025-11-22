@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <ctype.h>
 // Colores
 #define BLANCO "\033[0;37m"
 #define AMARILLO "\033[0;33m"
@@ -41,7 +42,10 @@ int mostrar_menu(){
     do
     {
         printf("Seleccione una opcion: ");
-        scanf("%d", &opcion);
+        while(scanf("%d", &opcion)!=1){
+            while(getchar()!='\n');
+            printf("Entrada invalida. Seleccione una opcion: ");
+        }
     } while (opcion<1||opcion>4);
     
 }
