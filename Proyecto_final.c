@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <ctype.h>
 // Colores
 #define BLANCO "\033[0;37m"
@@ -17,23 +18,45 @@ Ficha fichas[2][Num_fichas];  // fichas[0] = jugador 1, fichas[1] = jugador 2
 
 int mostrar_menu(),buscarFichaEnPosicion(int fila, int col, int resultado[2]);
 void inicializar_fichas(),mostrar_tablero();
+void ingresarNombreJugadores(char nombres[2][150]);
+
 int main(){
-    int opcion;
-    opcion= mostrar_menu();
-    switch (opcion)
-    {
-    case 1:
-        
-        break;
-    
-    default:
-        break;
-    }
+    char nombres[2][150];
+    int opcion, jugadorActual=1, gameOver=0;
+    do{
+        opcion= mostrar_menu();
+        switch (opcion)
+        {
+        case 1:
+            ingresarNombreJugadores(nombres);
+            do{
+                if(jugadorActual==1){
+                    printf("Turno del Jugador 1: %s\n", nombres[0]);
+                    inicializar_fichas();
+                    mostrar_tablero();
+                    jugadorActual=2;
+                }else if(jugadorActual==2){
+                    printf("Turno del Jugador 2: %s\n", nombres[1]);
+                    inicializar_fichas();
+                    mostrar_tablero();
+                }
+            }while(gameOver==0);
+            break;
+        case 2: 
+            break;
+        case 3:
+            break;
+        case 4:
+            break;
+        default:
+            break;
+        }
+    }while(opcion!=4);
     return 0;
 }
 
 int mostrar_menu(){
-    int opcion;
+    int opcion, revisarScanf;
     printf("\n====Damas Inglesas====\n");
     printf("[1] Jugar\n");
     printf("[2] Creditos\n");
@@ -42,10 +65,10 @@ int mostrar_menu(){
     do
     {
         printf("Seleccione una opcion: ");
-        while(scanf("%d", &opcion)!=1){
-            while(getchar()!='\n');
-            printf("Entrada invalida. Seleccione una opcion: ");
+        if(scanf("%d", &opcion)!=1){
+            printf("Opcion invalida\n");
         }
+        while(getchar()!='\n');
     } while (opcion<1||opcion>4);
     
 }
@@ -166,3 +189,47 @@ void mostrar_tablero() {
         printf("\n");
     }
 }
+
+void ingresarNombreJugadores(char nombres[2][150]){
+    int aprobarNombre=1;
+    do{
+        do{
+            aprobarNombre=1;
+            printf("Ingrese el nombre del Jugador 1: ");
+            fgets(nombres[0], 150, stdin);
+            if(!(nombres[0][0]!='\n' && isspace(nombres[0][0])==0)){
+                aprobarNombre=0;
+            }
+            for(int i=strlen(nombres[0])-2; i>=0; i--){
+                if(isalpha(nombres[0][i])==0 && nombres[0][i]!=' '){
+                    aprobarNombre=0;
+                    break;
+                }
+            }
+            if(aprobarNombre==0){
+                printf("Nombre invalido\n");
+            }
+        }while(aprobarNombre==0);
+        do{
+            aprobarNombre=1;
+            printf("Ingrese el nombre del Jugador 2: ");
+            fgets(nombres[1], 150, stdin);
+            if(!(nombres[1][0]!='\n' && isspace(nombres[1][0])==0)){
+                aprobarNombre=0;
+            }
+            for(int i=strlen(nombres[1])-2; i>=0; i--){
+                if(isalpha(nombres[1][i])==0 && nombres[1][i]!=' '){
+                    aprobarNombre=0;
+                    break;
+                }
+            }
+            if(aprobarNombre==0){
+                printf("Nombre invalido\n");
+            }
+        }while(aprobarNombre==0);
+        if(strcmp(nombres[0], nombres[1])==0){
+            printf("Los nombres no pueden ser iguales\n");
+        }
+    }while(strcmp(nombres[0], nombres[1])==0);
+}
+
