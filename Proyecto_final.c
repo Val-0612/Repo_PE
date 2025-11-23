@@ -1,18 +1,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 // Colores
 #define BLANCO "\033[0;37m"
 #define AMARILLO "\033[0;33m"
 #define ROJO "\033[0;31m"
 #define AZUL "\033[0;34m"
 #define Num_fichas 12
+
 typedef struct {
     int fila;
     int columna;
     int activa;    // 1 = en juego, 0 = consumida
     int esDama;    // 1 = dama, 0 = peon
-    int jugador;   // 1 = rojo, 2 = azul
+    int jugador;   // 0 = rojo, 1 = azul
 } Ficha;
 Ficha fichas[2][Num_fichas];  // fichas[0] = jugador 1, fichas[1] = jugador 2
 
@@ -22,7 +24,7 @@ void ingresarNombreJugadores(char nombres[2][150]);
 
 int main(){
     char nombres[2][150];
-    int opcion, jugadorActual=1, gameOver=0;
+    int opcion, jugadorActual=0, gameOver=0;
     do{
         opcion= mostrar_menu();
         switch (opcion)
@@ -30,12 +32,12 @@ int main(){
         case 1:
             ingresarNombreJugadores(nombres);
             do{
-                if(jugadorActual==1){
+                if(jugadorActual==0){
                     printf("Turno del Jugador 1: %s\n", nombres[0]);
                     inicializar_fichas();
                     mostrar_tablero();
-                    jugadorActual=2;
-                }else if(jugadorActual==2){
+                    jugadorActual=1;
+                }else if(jugadorActual==1){
                     printf("Turno del Jugador 2: %s\n", nombres[1]);
                     inicializar_fichas();
                     mostrar_tablero();
@@ -66,11 +68,12 @@ int mostrar_menu(){
     {
         printf("Seleccione una opcion: ");
         if(scanf("%d", &opcion)!=1){
+            while(getchar()!='\n');
             printf("Opcion invalida\n");
         }
-        while(getchar()!='\n');
     } while (opcion<1||opcion>4);
-    
+    while(getchar()!='\n');
+    return opcion;
 }
 
 void inicializar_fichas() {
@@ -83,7 +86,7 @@ void inicializar_fichas() {
                 fichas[0][idx].columna = j;
                 fichas[0][idx].activa = 1;
                 fichas[0][idx].esDama = 0;
-                fichas[0][idx].jugador = 1;
+                fichas[0][idx].jugador = 0;
                 idx++;
             }
         }
@@ -98,7 +101,7 @@ void inicializar_fichas() {
                 fichas[1][idx].columna = j;
                 fichas[1][idx].activa = 1;
                 fichas[1][idx].esDama = 0;
-                fichas[1][idx].jugador = 2;
+                fichas[1][idx].jugador = 1;
                 idx++;
             }
         }
@@ -189,17 +192,25 @@ void mostrar_tablero() {
         printf("\n");
     }
 }
-
+/**
+ * @brief Función para ingresar los nombres de los jugadores con validaciones
+ * 
+ * @param nombres Arreglo para almacenar los nombres de los jugadores
+ * 
+ * @retval void no retorna ningun valor
+ */
 void ingresarNombreJugadores(char nombres[2][150]){
     int aprobarNombre=1;
     do{
         do{
-            aprobarNombre=1;
+            aprobarNombre=1; //Variable bandera para aprobar el nombre
             printf("Ingrese el nombre del Jugador 1: ");
             fgets(nombres[0], 150, stdin);
+            //Valida de que el nombre no este vacio o inicie con espacio o salto de linea
             if(!(nombres[0][0]!='\n' && isspace(nombres[0][0])==0)){
                 aprobarNombre=0;
             }
+            //Valida de que el nombre solo contenga letras y espacios
             for(int i=strlen(nombres[0])-2; i>=0; i--){
                 if(isalpha(nombres[0][i])==0 && nombres[0][i]!=' '){
                     aprobarNombre=0;
@@ -209,7 +220,8 @@ void ingresarNombreJugadores(char nombres[2][150]){
             if(aprobarNombre==0){
                 printf("Nombre invalido\n");
             }
-        }while(aprobarNombre==0);
+        }while(aprobarNombre==0); //Repite hasta que el nombre sea valido
+        //El mismo proceso para el jugador dos
         do{
             aprobarNombre=1;
             printf("Ingrese el nombre del Jugador 2: ");
@@ -233,3 +245,110 @@ void ingresarNombreJugadores(char nombres[2][150]){
     }while(strcmp(nombres[0], nombres[1])==0);
 }
 
+int moverFicha(int jugadorActual, Ficha fichas[2][Num_fichas], int resultado[2]){
+    int filaOrigen, colOrigen, filaDestino, colDestino;
+    int encontrada, repetirSolicitud, op;
+    do{
+        repetirSolicitud=0;
+        do{
+            printf("Ingrese la fila de la ficha que desea mover: ");
+            if(scanf("%d", &filaOrigen)!=1){
+                printf("Entrada invalida. Ingrese un numero entero para la fila: ");
+                while(getchar()!='\n');
+                filaOrigen=-1; //Asigna un valor invalido para que el ciclo continue
+            }
+        }while(filaOrigen<0 || filaOrigen>7);
+        while(getchar()!='\n');
+        do{
+            printf("Ingrese la columna de la ficha que desea mover: ");
+            if(scanf("%d", &colOrigen)!=1){
+                printf("Entrada invalida. Ingrese un numero entero para la columna: ");
+                while(getchar()!='\n');
+                colOrigen=-1; //Asigna un valor invalido para que el ciclo continue
+            }
+        }while(colOrigen<0 || colOrigen>7);
+        while(getchar()!='\n');
+        encontrada=buscarFichaEnPosicion(filaOrigen, colOrigen, resultado);
+        if(encontrada==1 && resultado[0]==jugadorActual){
+            do{
+                printf("Ingrese la fila de destino: ");
+                if(scanf("%d", &filaDestino)!=1){
+                    printf("Entrada invalida. Ingrese un numero entero para la fila de destino: ");
+                    while(getchar()!='\n');
+                    filaDestino=-1; //Asigna un valor invalido para que el ciclo continue
+                }
+            }while(filaDestino<0 || filaDestino>7);
+            while(getchar()!='\n');
+            do{
+                printf("Ingrese la columna de destino: ");
+                if(scanf("%d", &colDestino)!=1){
+                    printf("Entrada invalida. Ingrese un numero entero para la columna de destino: ");
+                    while(getchar()!='\n');
+                    colDestino=-1; //Asigna un valor invalido para que el ciclo continue
+                }
+            }while(colDestino<0 || colDestino>7);
+            while(getchar()!='\n');
+            if(repetirSolicitud==1){
+                continue;
+            }
+            //Verifica que el peon no se mueva para atras
+            if(fichas[jugadorActual][resultado[1]].esDama==0){ 
+                if((jugadorActual==0 && filaDestino<=filaOrigen) || (jugadorActual==1 && filaDestino>=filaOrigen)){
+                    printf("Movimiento invalido segun las reglas del juego.\n");
+                    repetirSolicitud=1;
+                    continue;
+                }
+            }
+            //Verifica que la casilla de destino sea amarilla
+            if((filaDestino+colDestino)%2==0){
+                printf("Movimiento invalido: solo se puede mover a casillas amarillas\n");
+                repetirSolicitud=1;
+                continue;
+            }
+            //Verifica que el movimiento sea solo de una casilla diagonalmente
+            if(abs(filaDestino-filaOrigen)!=1 || abs(colDestino-colOrigen)!=1){
+                printf("Movimiento invalido: solo se puede mover una casilla diagonalmente\n");
+                repetirSolicitud=1;
+                continue;
+            }
+            //Verifica si la casilla de destino esta ocupada
+            encontrada=buscarFichaEnPosicion(filaDestino, colDestino, resultado);
+            if(encontrada==0){ //La casilla de destino esta libre
+                //Busca nuevamente la ficha del jugador actual para moverla
+                buscarFichaEnPosicion(filaOrigen, colOrigen, resultado);
+                //Mueve la ficha a la casilla de destino
+                fichas[jugadorActual][resultado[1]].fila=filaDestino;
+                fichas[jugadorActual][resultado[1]].columna=colDestino;
+                printf("Ficha movida a (%d, %d)\n", filaDestino, colDestino);
+                return 0;
+            }else if(encontrada==1){
+                if(resultado[0]==jugadorActual){
+                    printf("Movimiento invalido: casilla ocupada por otra ficha\n");
+                    repetirSolicitud=1;
+                    continue;
+                }else if(resultado[0]!=jugadorActual){
+                    do{
+                        printf("Hay una ficha enemiga en la casilla de destino. ¿Desea capturarla?\n 1.- Si\n 2.- No\n");
+                        if(scanf("%d", &op)!=1){
+                            printf("Opcion invalida\n");
+                            while(getchar()!='\n');
+                        }
+                    }while(op!=1 && op!=2);
+                    while(getchar()!='\n');
+                }
+                if(op==2){
+                    repetirSolicitud=1;
+                    continue;
+                }else if(op==1){
+                    //Encuentra la ficha a consumir y guarda sus daots en resultado
+                    buscarFichaEnPosicion(filaDestino, colDestino, resultado);
+                    return 1; //Indica que el usuario capturo una ficha, este valor es util para la concatenacion
+                }
+            }
+        }else{
+            printf("Ficha no encontrada o no pertenece al jugador.\n");
+            repetirSolicitud=1;
+        }
+    }while(repetirSolicitud==1);
+    return 0;
+}
