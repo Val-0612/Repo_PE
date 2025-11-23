@@ -245,9 +245,8 @@ void ingresarNombreJugadores(char nombres[2][150]){
     }while(strcmp(nombres[0], nombres[1])==0);
 }
 
-int moverFicha(int jugadorActual, Ficha fichas[2][Num_fichas], int resultado[2]){
-    int filaOrigen, colOrigen, filaDestino, colDestino;
-    int encontrada, repetirSolicitud, op;
+int moverFicha(int jugadorActual, Ficha fichas[2][Num_fichas], int resultado[2], int dest[2]){
+    int filaOrigen, colOrigen, filaDestino, colDestino, encontrada, repetirSolicitud, op;
     do{
         repetirSolicitud=0;
         do{
@@ -305,46 +304,32 @@ int moverFicha(int jugadorActual, Ficha fichas[2][Num_fichas], int resultado[2])
                 repetirSolicitud=1;
                 continue;
             }
+
+            encontrada=buscarFichaEnPosicion(filaDestino, colDestino, resultado);
+            if(encontrada==1){
+                printf("La casilla seleccionada ya esta ocupada\n");
+                repetirSolicitud=1;
+                continue;
+            }
+            //Verifica si se esta intentando capturar una ficha
+            if(abs(filaDestino-filaOrigen)==2 && abs(colDestino-colOrigen)==2){
+                //Calcula la posicion despues del supuesto consumo
+                buscarFichaEnPosicion(filaOrigen, colOrigen, resultado);
+                //Guarda la posicion de la ficha antes del supuesto consumo
+                dest[0]=(filaDestino);
+                dest[1]=(colDestino);
+                return 1; // Indica que se desea capturar una ficha
+            }
             //Verifica que el movimiento sea solo de una casilla diagonalmente
             if(abs(filaDestino-filaOrigen)!=1 || abs(colDestino-colOrigen)!=1){
                 printf("Movimiento invalido: solo se puede mover una casilla diagonalmente\n");
                 repetirSolicitud=1;
                 continue;
             }
-            //Verifica si la casilla de destino esta ocupada
-            encontrada=buscarFichaEnPosicion(filaDestino, colDestino, resultado);
-            if(encontrada==0){ //La casilla de destino esta libre
-                //Busca nuevamente la ficha del jugador actual para moverla
-                buscarFichaEnPosicion(filaOrigen, colOrigen, resultado);
-                //Mueve la ficha a la casilla de destino
-                fichas[jugadorActual][resultado[1]].fila=filaDestino;
-                fichas[jugadorActual][resultado[1]].columna=colDestino;
-                printf("Ficha movida a (%d, %d)\n", filaDestino, colDestino);
-                return 0;
-            }else if(encontrada==1){
-                if(resultado[0]==jugadorActual){
-                    printf("Movimiento invalido: casilla ocupada por otra ficha\n");
-                    repetirSolicitud=1;
-                    continue;
-                }else if(resultado[0]!=jugadorActual){
-                    do{
-                        printf("Hay una ficha enemiga en la casilla de destino. ¿Desea capturarla?\n 1.- Si\n 2.- No\n");
-                        if(scanf("%d", &op)!=1){
-                            printf("Opcion invalida\n");
-                            while(getchar()!='\n');
-                        }
-                    }while(op!=1 && op!=2);
-                    while(getchar()!='\n');
-                }
-                if(op==2){
-                    repetirSolicitud=1;
-                    continue;
-                }else if(op==1){
-                    //Encuentra la ficha a consumir y guarda sus daots en resultado
-                    buscarFichaEnPosicion(filaDestino, colDestino, resultado);
-                    return 1; //Indica que el usuario capturo una ficha, este valor es util para la concatenacion
-                }
-            }
+            //Si pasa todas las validaciones, mueve la ficha
+            buscarFichaEnPosicion(filaOrigen, colOrigen, resultado);
+            fichas[jugadorActual][resultado[1]].fila=filaDestino;
+            fichas[jugadorActual][resultado[1]].columna=colDestino;
         }else{
             printf("Ficha no encontrada o no pertenece al jugador.\n");
             repetirSolicitud=1;
