@@ -20,11 +20,30 @@ Ficha fichas[2][Num_fichas];  // fichas[0] = jugador 1, fichas[1] = jugador 2
 
 int mostrar_menu(),buscarFichaEnPosicion(int fila, int col, int resultado[2]);
 void inicializar_fichas(),mostrar_tablero();
+/**
+ * @brief Función para ingresar los nombres de los jugadores con validaciones
+ * 
+ * @param nombres Arreglo para almacenar los nombres de los jugadores
+ * 
+ * @retval void no retorna ningun valor
+ */
 void ingresarNombreJugadores(char nombres[2][150]);
-
+/**
+ * @brief Mueve una ficha en el tablero
+ * 
+ * @param jugadorActual Jugador que realiza el movimiento (0 o 1)
+ * @param fichas Arreglo de fichas de ambos jugadores
+ * @param resultado Arreglo para almacenar el resultado de la búsqueda de ficha
+ * @param dest Arreglo para almacenar la posición de destino en caso de captura
+ * 
+ * @retval int Retorna 1 si se desea capturar una ficha, 0 si es un movimiento normal
+ */
+int moverFicha(int jugadorActual, Ficha fichas[2][Num_fichas], int resultado[2], int dest[2]);
 int main(){
     char nombres[2][150];
     int opcion, jugadorActual=0, gameOver=0;
+    int resultado[2]; //resultado[0]= jugador que pertenece, resultado[1]= indice de la ficha
+    int coordsDest[2]; //coordsDest[0]= fila destino, coordsDest[1]= columna destino
     do{
         opcion= mostrar_menu();
         switch (opcion)
@@ -36,11 +55,13 @@ int main(){
                     printf("Turno del Jugador 1: %s\n", nombres[0]);
                     inicializar_fichas();
                     mostrar_tablero();
+                    moverFicha(jugadorActual, fichas, resultado, coordsDest);
                     jugadorActual=1;
                 }else if(jugadorActual==1){
                     printf("Turno del Jugador 2: %s\n", nombres[1]);
                     inicializar_fichas();
                     mostrar_tablero();
+                    jugadorActual=0;
                 }
             }while(gameOver==0);
             break;
@@ -192,13 +213,7 @@ void mostrar_tablero() {
         printf("\n");
     }
 }
-/**
- * @brief Función para ingresar los nombres de los jugadores con validaciones
- * 
- * @param nombres Arreglo para almacenar los nombres de los jugadores
- * 
- * @retval void no retorna ningun valor
- */
+
 void ingresarNombreJugadores(char nombres[2][150]){
     int aprobarNombre=1;
     do{
@@ -339,6 +354,7 @@ int moverFicha(int jugadorActual, Ficha fichas[2][Num_fichas], int resultado[2],
             buscarFichaEnPosicion(filaOrigen, colOrigen, resultado);
             fichas[jugadorActual][resultado[1]].fila=filaDestino;
             fichas[jugadorActual][resultado[1]].columna=colDestino;
+            printf("Ficha movida a (%d, %d)\n", filaDestino, colDestino);
         }else{
             printf("Ficha no encontrada o no pertenece al jugador.\n");
             repetirSolicitud=1;
