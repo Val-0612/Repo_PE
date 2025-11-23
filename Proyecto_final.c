@@ -244,7 +244,16 @@ void ingresarNombreJugadores(char nombres[2][150]){
         }
     }while(strcmp(nombres[0], nombres[1])==0);
 }
-
+/**
+ * @brief Mueve una ficha en el tablero
+ * 
+ * @param jugadorActual Jugador que realiza el movimiento (0 o 1)
+ * @param fichas Arreglo de fichas de ambos jugadores
+ * @param resultado Arreglo para almacenar el resultado de la búsqueda de ficha
+ * @param dest Arreglo para almacenar la posición de destino en caso de captura
+ * 
+ * @retval int Retorna 1 si se desea capturar una ficha, 0 si es un movimiento normal
+ */
 int moverFicha(int jugadorActual, Ficha fichas[2][Num_fichas], int resultado[2], int dest[2]){
     int filaOrigen, colOrigen, filaDestino, colDestino, encontrada, repetirSolicitud, op;
     do{
