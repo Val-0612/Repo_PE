@@ -50,16 +50,15 @@ int main(){
         {
         case 1:
             ingresarNombreJugadores(nombres);
+            inicializar_fichas();
             do{
                 if(jugadorActual==0){
                     printf("Turno del Jugador 1: %s\n", nombres[0]);
-                    inicializar_fichas();
                     mostrar_tablero();
                     moverFicha(jugadorActual, fichas, resultado, coordsDest);
                     jugadorActual=1;
                 }else if(jugadorActual==1){
                     printf("Turno del Jugador 2: %s\n", nombres[1]);
-                    inicializar_fichas();
                     mostrar_tablero();
                     jugadorActual=0;
                 }
