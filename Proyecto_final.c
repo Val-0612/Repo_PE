@@ -60,6 +60,7 @@ int main(){
                 }else if(jugadorActual==1){
                     printf("Turno del Jugador 2: %s\n", nombres[1]);
                     mostrar_tablero();
+                    moverFicha(jugadorActual, fichas, resultado, coordsDest);
                     jugadorActual=0;
                 }
             }while(gameOver==0);
@@ -353,7 +354,7 @@ int moverFicha(int jugadorActual, Ficha fichas[2][Num_fichas], int resultado[2],
             buscarFichaEnPosicion(filaOrigen, colOrigen, resultado);
             fichas[jugadorActual][resultado[1]].fila=filaDestino;
             fichas[jugadorActual][resultado[1]].columna=colDestino;
-            printf("Ficha movida a (%d, %d)\n", filaDestino, colDestino);
+            printf("Ficha movida a (%d, %d)\n", fichas[jugadorActual][resultado[1]].fila, fichas[jugadorActual][resultado[1]].columna);
         }else{
             printf("Ficha no encontrada o no pertenece al jugador.\n");
             repetirSolicitud=1;
