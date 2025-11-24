@@ -44,7 +44,9 @@ int moverFicha(int jugadorActual, int resultado[2], int dest[2]);
  * @param jugadorActual Jugador que posee la ficha (0 o 1)
  * @param indiceFicha Índice de la ficha en el arreglo del jugador
  * 
- * @retval int Retorna 1 si la ficha fue promovida, 0 si no fue promovida, -1 si el índice es inválido
+ * @retval -1  No debería ocurrir
+ * @retval 0   No se realizó la promoción
+ * @retval 1   La ficha fue promovida a dama
  */
 int promocionDama(int jugadorActual, int indiceFicha);
 
