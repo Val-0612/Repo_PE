@@ -67,11 +67,13 @@ int main(){
                     printf("Turno del Jugador 1: %s\n", nombres[0]);
                     mostrar_tablero();
                     moverFicha(jugadorActual, resultado, coordsDest);
+                    promocionDama(jugadorActual, resultado[1]);
                     jugadorActual=1;
                 }else if(jugadorActual==1){
                     printf("Turno del Jugador 2: %s\n", nombres[1]);
                     mostrar_tablero();
                     moverFicha(jugadorActual, resultado, coordsDest);
+                    promocionDama(jugadorActual, resultado[1]);
                     jugadorActual=0;
                 }
             }while(gameOver==0);
