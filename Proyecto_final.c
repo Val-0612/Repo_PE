@@ -51,10 +51,11 @@ int moverFicha(int jugadorActual, int resultado[2], int dest[2]);
 int promocionDama(int jugadorActual, int indiceFicha);
 
 int main(){
-    char nombres[2][150];
+    char nombres[2][150], linea[200];
     int opcion, jugadorActual=0, gameOver=0;
     int resultado[2]; //resultado[0]= jugador que pertenece, resultado[1]= indice de la ficha
     int coordsDest[2]; //coordsDest[0]= fila destino, coordsDest[1]= columna destino
+    FILE *fCreditos;
     do{
         opcion= mostrar_menu();
         switch (opcion)
@@ -79,6 +80,15 @@ int main(){
             }while(gameOver==0);
             break;
         case 2: 
+            fCreditos=fopen("creditos.txt", "r");
+            if(fCreditos==NULL){
+                printf("No se pudo abrir el archivo de créditos.\n");
+            }else{
+                while(fgets(linea, sizeof(linea), fCreditos)!=NULL){
+                    printf("%s", linea);
+                }
+                fclose(fCreditos);
+            }
             break;
         case 3:
             break;
