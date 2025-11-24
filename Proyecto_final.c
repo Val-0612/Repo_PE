@@ -32,13 +32,24 @@ void ingresarNombreJugadores(char nombres[2][150]);
  * @brief Mueve una ficha en el tablero
  * 
  * @param jugadorActual Jugador que realiza el movimiento (0 o 1)
- * @param fichas Arreglo de fichas de ambos jugadores
  * @param resultado Arreglo para almacenar el resultado de la búsqueda de ficha
  * @param dest Arreglo para almacenar la posición de destino en caso de captura
  * 
  * @retval int Retorna 1 si se desea capturar una ficha, 0 si es un movimiento normal
  */
-int moverFicha(int jugadorActual, Ficha fichas[2][Num_fichas], int resultado[2], int dest[2]);
+int moverFicha(int jugadorActual, int resultado[2], int dest[2]);
+/**
+ * @brief Promociona una ficha a dama si llega a la fila final
+ * 
+ * @param jugadorActual Jugador que posee la ficha (0 o 1)
+ * @param indiceFicha Índice de la ficha en el arreglo del jugador
+ * 
+ * @retval -1  No debería ocurrir
+ * @retval 0   No se realizó la promoción
+ * @retval 1   La ficha fue promovida a dama
+ */
+int promocionDama(int jugadorActual, int indiceFicha);
+
 int main(){
     char nombres[2][150];
     int opcion, jugadorActual=0, gameOver=0;
@@ -55,12 +66,14 @@ int main(){
                 if(jugadorActual==0){
                     printf("Turno del Jugador 1: %s\n", nombres[0]);
                     mostrar_tablero();
-                    moverFicha(jugadorActual, fichas, resultado, coordsDest);
+                    moverFicha(jugadorActual, resultado, coordsDest);
+                    promocionDama(jugadorActual, resultado[1]);
                     jugadorActual=1;
                 }else if(jugadorActual==1){
                     printf("Turno del Jugador 2: %s\n", nombres[1]);
                     mostrar_tablero();
-                    moverFicha(jugadorActual, fichas, resultado, coordsDest);
+                    moverFicha(jugadorActual, resultado, coordsDest);
+                    promocionDama(jugadorActual, resultado[1]);
                     jugadorActual=0;
                 }
             }while(gameOver==0);
@@ -269,7 +282,7 @@ void ingresarNombreJugadores(char nombres[2][150]){
  * 
  * @retval int Retorna 1 si se desea capturar una ficha, 0 si es un movimiento normal
  */
-int moverFicha(int jugadorActual, Ficha fichas[2][Num_fichas], int resultado[2], int dest[2]){
+int moverFicha(int jugadorActual, int resultado[2], int dest[2]){
     int filaOrigen, colOrigen, filaDestino, colDestino, encontrada, repetirSolicitud, op;
     do{
         repetirSolicitud=0;
@@ -360,5 +373,22 @@ int moverFicha(int jugadorActual, Ficha fichas[2][Num_fichas], int resultado[2],
             repetirSolicitud=1;
         }
     }while(repetirSolicitud==1);
+    return 0;
+}
+
+int promocionDama(int jugadorActual, int indiceFicha){
+    if(indiceFicha<0 || indiceFicha>=Num_fichas){
+        return -1; //No deberia de pasar esto
+    }
+    //Verifica si la ficha ha llegado a la fila final para promocion a dama
+    if(jugadorActual==0 && fichas[jugadorActual][indiceFicha].fila==7 && fichas[jugadorActual][indiceFicha].esDama==0 && fichas[jugadorActual][indiceFicha].activa==1 ){
+        fichas[jugadorActual][indiceFicha].esDama=1;
+        printf("La ficha ha sido promovida a Dama\n");
+        return 1;
+    }else if(jugadorActual==1 && fichas[jugadorActual][indiceFicha].fila==0 && fichas[jugadorActual][indiceFicha].esDama==0 && fichas[jugadorActual][indiceFicha].activa==1){
+        fichas[jugadorActual][indiceFicha].esDama=1;
+        printf("La ficha ha sido promovida a Dama\n");
+        return 1;
+    }
     return 0;
 }
