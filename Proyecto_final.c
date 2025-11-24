@@ -38,6 +38,16 @@ void ingresarNombreJugadores(char nombres[2][150]);
  * @retval int Retorna 1 si se desea capturar una ficha, 0 si es un movimiento normal
  */
 int moverFicha(int jugadorActual, int resultado[2], int dest[2]);
+/**
+ * @brief Promociona una ficha a dama si llega a la fila final
+ * 
+ * @param jugadorActual Jugador que posee la ficha (0 o 1)
+ * @param indiceFicha Índice de la ficha en el arreglo del jugador
+ * 
+ * @retval int Retorna 1 si la ficha fue promovida, 0 si no fue promovida, -1 si el índice es inválido
+ */
+int promocionDama(int jugadorActual, int indiceFicha);
+
 int main(){
     char nombres[2][150];
     int opcion, jugadorActual=0, gameOver=0;
