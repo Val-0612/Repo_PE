@@ -637,7 +637,6 @@ int verificarFinJuego(int jugadorActual, char nombres[2][150]){
     FILE *fHistorial;
     int jugadorRival;
     int fichasActivas[2] = {0, 0};
-    int jugadorRival;
 
     if(jugadorActual==0){
         jugadorRival=1;
