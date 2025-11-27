@@ -36,12 +36,13 @@ void procesarConsumosConcatenados(int jugadorActual, int resultado[2]);
 
 // ============== FUNCIÓN MAIN ==============
 int main(){
-    char nombres[2][150], linea[200];
+    char nombres[2][150], linea[200], nombreGanador[150], motivo[200];
     int opcion, jugadorActual=0, gameOver=0;
     int resultado[2]; //resultado[0]= jugador que pertenece, resultado[1]= indice de la ficha
     int coordsDest[2]; //coordsDest[0]= fila destino, coordsDest[1]= columna destino
     int intentoCaptura;
     FILE *fCreditos;
+    FILE *fHistorial;
     
     do{
         opcion = mostrar_menu();
@@ -121,7 +122,18 @@ int main(){
             break;
             
         case 3:
-            printf("Funcion de historial no implementada aun.\n");
+            FILE *fHistorial;
+            fHistorial=fopen("historial.bin", "rb");
+            if(fHistorial==NULL){
+                printf("No se pudo abrir el archivo de historial.\n");
+                return 1;
+            }
+            printf("\n==== Historial de Victorias ====\n");
+            
+            while(fread(&nombreGanador, sizeof(char), 150, fHistorial)!=0){
+                fread(&motivo, sizeof(char), 200, fHistorial);
+                printf("Ganador: %s\nMotivo: %s\n\n", nombreGanador, motivo);
+            }
             printf("Presione Enter para volver al menu...");
             getchar();
             break;
@@ -660,6 +672,7 @@ void procesarConsumosConcatenados(int jugadorActual, int resultado[2]){
 
 // ============== VERIFICAR FIN DE JUEGO ==============
 int verificarFinJuego(int jugadorActual, char nombres[2][150]){
+    FILE *fHistorial;
     int jugadorRival = (jugadorActual == 0) ? 1 : 0;
     int fichasActivas[2] = {0, 0};
     
@@ -668,7 +681,7 @@ int verificarFinJuego(int jugadorActual, char nombres[2][150]){
         if(fichas[0][i].activa == 1) fichasActivas[0]++;
         if(fichas[1][i].activa == 1) fichasActivas[1]++;
     }
-    
+    fopen("historial.bin", "ab");
     // Condición 1: El jugador rival no tiene fichas
     if(fichasActivas[jugadorRival] == 0){
         mostrar_tablero();
@@ -677,6 +690,9 @@ int verificarFinJuego(int jugadorActual, char nombres[2][150]){
         printf("   Ganador: %s\n", nombres[jugadorActual]);
         printf("   Motivo: El oponente no tiene fichas\n");
         printf("========================================\n");
+        fwrite(&nombres[jugadorActual], sizeof(char), 150, fHistorial);
+        char motivo[] = "El oponente no tiene fichas";
+        fwrite(motivo, sizeof(char), strlen(motivo), fHistorial);
         return 1;
     }
     
@@ -688,6 +704,10 @@ int verificarFinJuego(int jugadorActual, char nombres[2][150]){
         printf("   Ganador: %s\n", nombres[jugadorActual]);
         printf("   Motivo: El oponente no tiene movimientos válidos\n");
         printf("========================================\n");
+        fwrite(&nombres[jugadorActual], sizeof(char), 150, fHistorial);
+        char motivo[] = "El oponente no tiene movimientos válidos";
+        fwrite(motivo, sizeof(char), strlen(motivo), fHistorial);
+        fclose(fHistorial);
         return 1;
     }
     
@@ -805,4 +825,8 @@ int puedeMoverse(int jugador, int notEndGame, int ficha, int fila, int columna){
             }
     }
     return 0; // No hay movimientos disponibles
+}
+
+void historialVictorias(){
+    
 }
