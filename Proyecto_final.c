@@ -73,7 +73,7 @@ int main(){
                             procesarConsumosConcatenados(jugadorActual, resultado);
                         }
                     }
-                    
+                    fichas[jugadorActual][resultado[1]].primerConsumoRealizado = 0;
                     promocionDama(jugadorActual, resultado[1]);
                     gameOver = verificarFinJuego(jugadorActual, nombres);
                     if(!gameOver) jugadorActual=1;
@@ -96,7 +96,7 @@ int main(){
                             procesarConsumosConcatenados(jugadorActual, resultado);
                         }
                     }
-                     fichas[jugadorActual][resultado[1]].primerConsumoRealizado = 0;
+                    fichas[jugadorActual][resultado[1]].primerConsumoRealizado = 0;
                     promocionDama(jugadorActual, resultado[1]);
                     gameOver = verificarFinJuego(jugadorActual, nombres);
                     if(!gameOver) jugadorActual=0;
