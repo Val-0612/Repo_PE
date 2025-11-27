@@ -16,6 +16,7 @@ typedef struct {
     int activa;    // 1 = en juego, 0 = consumida
     int esDama;    // 1 = dama, 0 = peon
     int jugador;   // 0 = rojo, 1 = azul
+    int primerConsumoRealizado; // 1 = si, 0 = no
 } Ficha;
 
 Ficha fichas[2][Num_fichas];  // fichas[0] = jugador 1, fichas[1] = jugador 2
@@ -30,18 +31,18 @@ int moverFicha(int jugadorActual, int resultado[2], int dest[2]);
 int promocionDama(int jugadorActual, int indiceFicha);
 int consumirFicha(int filaOrigen, int colOrigen, int filaDestino, int colDestino, int jugadorActual);
 int verificarFinJuego(int jugadorActual, char nombres[2][150]);
-int puedeMoverse(int jugador);
+int puedeMoverse(int jugador, int notEndGame, int ficha, int fila, int columna);
 int verificarCapturasDisponibles(int jugador, int fila, int col);
 void procesarConsumosConcatenados(int jugadorActual, int resultado[2]);
 
-// ============== FUNCIÓN MAIN ==============
 int main(){
-    char nombres[2][150], linea[200];
-    int opcion, jugadorActual=0, gameOver=0;
+    char nombres[2][150], linea[200], nombreGanador[150], motivo[200];
+    int opcion, jugadorActual=0, gameOver=0, fichasActivas;
     int resultado[2]; //resultado[0]= jugador que pertenece, resultado[1]= indice de la ficha
     int coordsDest[2]; //coordsDest[0]= fila destino, coordsDest[1]= columna destino
     int intentoCaptura;
     FILE *fCreditos;
+    FILE *fHistorial;
     
     do{
         opcion = mostrar_menu();
@@ -55,7 +56,7 @@ int main(){
             
             do{
                 if(jugadorActual==0){
-                    printf("\n=== Turno del Jugador 1: %s ===\n", nombres[0]);
+                    printf("\nTurno del Jugador 1: %s\n", nombres[0]);
                     mostrar_tablero();
                     intentoCaptura = moverFicha(jugadorActual, resultado, coordsDest);
                     
@@ -63,16 +64,21 @@ int main(){
                         // Se intentó capturar una ficha
                         int filaOrigen = fichas[jugadorActual][resultado[1]].fila;
                         int colOrigen = fichas[jugadorActual][resultado[1]].columna;
-                        if(consumirFicha(filaOrigen, colOrigen, coordsDest[0], coordsDest[1], jugadorActual)){
+                        if(consumirFicha(filaOrigen, colOrigen, coordsDest[0], coordsDest[1], jugadorActual)==1){
                             fichas[jugadorActual][resultado[1]].fila = coordsDest[0];
                             fichas[jugadorActual][resultado[1]].columna = coordsDest[1];
                             printf("Ficha consumida y movida a (%d, %d)\n", coordsDest[0], coordsDest[1]);
-                            
+                            promocionDama(jugadorActual, resultado[1]);
                             // Procesar consumos concatenados
-                            procesarConsumosConcatenados(jugadorActual, resultado);
+                            fichas[jugadorActual][resultado[1]].primerConsumoRealizado = 1;
+                            while(verificarCapturasDisponibles(jugadorActual, fichas[jugadorActual][resultado[1]].fila, fichas[jugadorActual][resultado[1]].columna)){
+                                promocionDama(jugadorActual, resultado[1]);
+                                procesarConsumosConcatenados(jugadorActual, resultado);
+                                promocionDama(jugadorActual, resultado[1]);
+                            }
                         }
                     }
-                    
+                    fichas[jugadorActual][resultado[1]].primerConsumoRealizado = 0;
                     promocionDama(jugadorActual, resultado[1]);
                     gameOver = verificarFinJuego(jugadorActual, nombres);
                     if(!gameOver) jugadorActual=1;
@@ -90,20 +96,23 @@ int main(){
                             fichas[jugadorActual][resultado[1]].fila = coordsDest[0];
                             fichas[jugadorActual][resultado[1]].columna = coordsDest[1];
                             printf("Ficha consumida y movida a (%d, %d)\n", coordsDest[0], coordsDest[1]);
-                            
+                            promocionDama(jugadorActual, resultado[1]);
                             // Procesar consumos concatenados
-                            procesarConsumosConcatenados(jugadorActual, resultado);
+                            fichas[jugadorActual][resultado[1]].primerConsumoRealizado = 1;
+                            while(verificarCapturasDisponibles(jugadorActual, fichas[jugadorActual][resultado[1]].fila, fichas[jugadorActual][resultado[1]].columna)){
+                                promocionDama(jugadorActual, resultado[1]);
+                                procesarConsumosConcatenados(jugadorActual, resultado);
+                                promocionDama(jugadorActual, resultado[1]);
+                            }
+                            
                         }
                     }
-                    
+                    fichas[jugadorActual][resultado[1]].primerConsumoRealizado = 0;
                     promocionDama(jugadorActual, resultado[1]);
                     gameOver = verificarFinJuego(jugadorActual, nombres);
                     if(!gameOver) jugadorActual=0;
                 }
             }while(gameOver==0);
-            
-            printf("\nPresione Enter para volver al menu...");
-            getchar();
             break;
             
         case 2: 
@@ -116,18 +125,26 @@ int main(){
                 }
                 fclose(fCreditos);
             }
-            printf("\nPresione Enter para continuar...");
-            getchar();
             break;
             
         case 3:
-            printf("Funcion de historial no implementada aun.\n");
-            printf("Presione Enter para continuar...");
-            getchar();
+            FILE *fHistorial;
+            fHistorial=fopen("historial.bin", "rb");
+            if(fHistorial==NULL){
+                printf("No se pudo abrir el archivo de historial.\n");
+                return 1;
+            }
+            printf("\nHistorial de Victorias\n");
+            while(fread(&nombreGanador, sizeof(char), 150, fHistorial)!=0){
+                fread(&motivo, sizeof(char), 200, fHistorial);
+                fread(&fichasActivas, sizeof(int), 1, fHistorial);
+                printf("Ganador: %s\nMotivo: %s\nFichas activas: %d\n\n", nombreGanador, motivo, fichasActivas);
+            }
+            fclose(fHistorial);
             break;
             
         case 4:
-            printf("Gracias por jugar!\n");
+            printf("Gracias por jugar\n");
             break;
             
         default:
@@ -138,10 +155,8 @@ int main(){
     return 0;
 }
 
-// ============== MOSTRAR MENÚ ==============
 int mostrar_menu(){
     int opcion;
-    printf("\n====Damas Inglesas====\n");
     printf("[1] Jugar\n");
     printf("[2] Creditos\n");
     printf("[3] Historial de Victorias\n");
@@ -158,7 +173,6 @@ int mostrar_menu(){
     return opcion;
 }
 
-// ============== INICIALIZAR FICHAS ==============
 void inicializar_fichas() {
     int idx = 0;
     // Fichas jugador 1 (azul) - filas 0, 1, 2
@@ -191,7 +205,7 @@ void inicializar_fichas() {
     }
 }
 
-// ============== BUSCAR FICHA EN POSICIÓN ==============
+
 int buscarFichaEnPosicion(int fila, int col, int resultado[2]) {
     int jugador, i;
     for(jugador = 0; jugador < 2; jugador++) {
@@ -208,7 +222,6 @@ int buscarFichaEnPosicion(int fila, int col, int resultado[2]) {
     return 0;
 }
 
-// ============== MOSTRAR TABLERO ==============
 void mostrar_tablero() {
     int resultado[2];
     int encontrada;
@@ -280,7 +293,6 @@ void mostrar_tablero() {
     }
 }
 
-// ============== INGRESAR NOMBRES ==============
 void ingresarNombreJugadores(char nombres[2][150]){
     int aprobarNombre=1;
     do{
@@ -330,13 +342,12 @@ void ingresarNombreJugadores(char nombres[2][150]){
     }while(strcmp(nombres[0], nombres[1])==0);
 }
 
-// ============== MOVER FICHA ==============
+
 int moverFicha(int jugadorActual, int resultado[2], int dest[2]){
-    int filaOrigen, colOrigen, filaDestino, colDestino, encontrada, repetirSolicitud;
+    int filaOrigen, colOrigen, filaDestino, colDestino, encontrada, repetirSolicitud, moverse, distanciaFila, distanciaCol, filaMedio, colMedio, dirFila;
     
     do{
         repetirSolicitud=0;
-        
         do{
             printf("Ingrese la fila de la ficha que desea mover: ");
             if(scanf("%d", &filaOrigen)!=1){
@@ -360,6 +371,11 @@ int moverFicha(int jugadorActual, int resultado[2], int dest[2]){
         encontrada=buscarFichaEnPosicion(filaOrigen, colOrigen, resultado);
         
         if(encontrada==1 && resultado[0]==jugadorActual){
+            if(puedeMoverse(jugadorActual, 1, resultado[1], filaOrigen, colOrigen)==0){
+                printf("La ficha seleccionada no tiene movimientos validos.\n");
+                repetirSolicitud=1;
+                continue;
+            }
             do{
                 printf("Ingrese la fila de destino: ");
                 if(scanf("%d", &filaDestino)!=1){
@@ -392,50 +408,62 @@ int moverFicha(int jugadorActual, int resultado[2], int dest[2]){
             }
             
             // Determina el tipo de movimiento por la distancia
-            int distanciaFila = abs(filaDestino - filaOrigen);
-            int distanciaCol = abs(colDestino - colOrigen);
+            distanciaFila = abs(filaDestino-filaOrigen);
+            distanciaCol = abs(colDestino-colOrigen);
             
             // CASO 1: Intento de captura (2 casillas)
-            if(distanciaFila == 2 && distanciaCol == 2){
+            if(distanciaFila==2 && distanciaCol==2){
                 // Verifica que la casilla de destino esté vacía
                 int tempRes[2];
                 encontrada = buscarFichaEnPosicion(filaDestino, colDestino, tempRes);
-                if(encontrada == 1){
+                if(encontrada==1){
                     printf("La casilla de destino esta ocupada\n");
                     repetirSolicitud=1;
                     continue;
                 }
                 
                 // Calcula la posición intermedia
-                int filaMedio = (filaOrigen + filaDestino) / 2;
-                int colMedio = (colOrigen + colDestino) / 2;
-                
+                filaMedio = (filaOrigen + filaDestino) / 2;
+                colMedio = (colOrigen + colDestino) / 2;
+                dirFila = (filaDestino - filaOrigen) / 2;
+                // Si NO es dama y NO ha hecho su primer consumo, debe capturar hacia adelante
+                if(!fichas[jugadorActual][resultado[1]].esDama &&
+                fichas[jugadorActual][resultado[1]].primerConsumoRealizado == 0)
+                {
+                    if(jugadorActual == 0 && dirFila <= 0){
+                        printf("El primer consumo debe ser hacia adelante.\n");
+                        repetirSolicitud = 1;
+                        continue;
+                    }
+                    if(jugadorActual == 1 && dirFila >= 0){
+                        printf("El primer consumo debe ser hacia adelante.\n");
+                        repetirSolicitud = 1;
+                        continue;
+                    }
+                }
+
                 // Verifica que haya una ficha enemiga en medio
-                if(buscarFichaEnPosicion(filaMedio, colMedio, tempRes)){
-                    if(tempRes[0] != jugadorActual){
+                if(buscarFichaEnPosicion(filaMedio, colMedio, tempRes)!=0){
+                    if(tempRes[0]!=jugadorActual){
                         // Es válido, hay ficha enemiga para capturar
                         buscarFichaEnPosicion(filaOrigen, colOrigen, resultado);
-                        dest[0] = filaDestino;
-                        dest[1] = colDestino;
+                        dest[0]=filaDestino;
+                        dest[1]=colDestino;
                         return 1; // Indica que se desea capturar una ficha
-                    } else {
+                    }else{
                         printf("No puedes saltar sobre tus propias fichas\n");
                         repetirSolicitud=1;
                         continue;
                     }
-                } else {
+                }else{
                     printf("No hay ficha enemiga para capturar en esa diagonal\n");
                     repetirSolicitud=1;
                     continue;
                 }
-            }
-            
-            // CASO 2: Movimiento simple (1 casilla)
-            else if(distanciaFila == 1 && distanciaCol == 1){
+            }else if(distanciaFila==1 && distanciaCol==1){
                 // Verifica que el peon no se mueva para atras
-                if(fichas[jugadorActual][resultado[1]].esDama == 0){ 
-                    if((jugadorActual == 0 && filaDestino <= filaOrigen) || 
-                       (jugadorActual == 1 && filaDestino >= filaOrigen)){
+                if(fichas[jugadorActual][resultado[1]].esDama==0){ 
+                    if((jugadorActual==0 && filaDestino<=filaOrigen) || (jugadorActual==1 && filaDestino>=filaOrigen)){
                         printf("Movimiento invalido segun las reglas del juego.\n");
                         repetirSolicitud=1;
                         continue;
@@ -443,8 +471,8 @@ int moverFicha(int jugadorActual, int resultado[2], int dest[2]){
                 }
                 
                 // Verifica que la casilla de destino esté vacía
-                encontrada = buscarFichaEnPosicion(filaDestino, colDestino, resultado);
-                if(encontrada == 1){
+                encontrada=buscarFichaEnPosicion(filaDestino, colDestino, resultado);
+                if(encontrada==1){
                     printf("La casilla seleccionada ya esta ocupada\n");
                     repetirSolicitud=1;
                     continue;
@@ -459,7 +487,7 @@ int moverFicha(int jugadorActual, int resultado[2], int dest[2]){
             }
             
             // CASO 3: Movimiento inválido
-            else {
+            else{
                 printf("Movimiento invalido: solo puedes mover 1 casilla (movimiento simple) o 2 casillas (captura)\n");
                 repetirSolicitud=1;
                 continue;
@@ -473,23 +501,16 @@ int moverFicha(int jugadorActual, int resultado[2], int dest[2]){
     return 0;
 }
 
-// ============== PROMOCIÓN A DAMA ==============
 int promocionDama(int jugadorActual, int indiceFicha){
     if(indiceFicha<0 || indiceFicha>=Num_fichas){
         return -1;
     }
     
-    if(jugadorActual==0 && 
-       fichas[jugadorActual][indiceFicha].fila==7 && 
-       fichas[jugadorActual][indiceFicha].esDama==0 && 
-       fichas[jugadorActual][indiceFicha].activa==1){
+    if(jugadorActual==0 && fichas[jugadorActual][indiceFicha].fila==7 && fichas[jugadorActual][indiceFicha].esDama==0 && fichas[jugadorActual][indiceFicha].activa==1){
         fichas[jugadorActual][indiceFicha].esDama=1;
         printf("La ficha ha sido promovida a Dama\n");
         return 1;
-    }else if(jugadorActual==1 && 
-             fichas[jugadorActual][indiceFicha].fila==0 && 
-             fichas[jugadorActual][indiceFicha].esDama==0 && 
-             fichas[jugadorActual][indiceFicha].activa==1){
+    }else if(jugadorActual==1 && fichas[jugadorActual][indiceFicha].fila==0 && fichas[jugadorActual][indiceFicha].esDama==0 && fichas[jugadorActual][indiceFicha].activa==1){
         fichas[jugadorActual][indiceFicha].esDama=1;
         printf("La ficha ha sido promovida a Dama\n");
         return 1;
@@ -497,7 +518,6 @@ int promocionDama(int jugadorActual, int indiceFicha){
     return 0;
 }
 
-// ============== CONSUMIR FICHA ==============
 int consumirFicha(int filaOrigen, int colOrigen, int filaDestino, int colDestino, int jugadorActual){
     // Calcula la posición de la ficha que está en medio
     int filaMedio = (filaOrigen + filaDestino) / 2;
@@ -522,54 +542,42 @@ int consumirFicha(int filaOrigen, int colOrigen, int filaDestino, int colDestino
     }
 }
 
-// ============== VERIFICAR CAPTURAS DISPONIBLES ==============
 int verificarCapturasDisponibles(int jugador, int fila, int col){
-    int resultado[2];
-    int esDama = 0;
-    
+    int resultado[2], esDama=0;
     // Buscar si la ficha es dama
-    if(buscarFichaEnPosicion(fila, col, resultado)){
-        esDama = fichas[resultado[0]][resultado[1]].esDama;
-    }
-    
-    // Direcciones posibles de captura diagonal
-    int direcciones[4][2] = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
-    
-    for(int d = 0; d < 4; d++){
-        int dirFila = direcciones[d][0];
-        int dirCol = direcciones[d][1];
-        
-        // Si es peón, solo puede capturar hacia adelante
-        if(!esDama){
-            if(jugador == 0 && dirFila < 0) continue; // Jugador 0 solo hacia abajo
-            if(jugador == 1 && dirFila > 0) continue; // Jugador 1 solo hacia arriba
+        if(buscarFichaEnPosicion(fila, col, resultado)){
+            esDama = fichas[resultado[0]][resultado[1]].esDama;
         }
         
-        int filaCaptura = fila + dirFila;
-        int colCaptura = col + dirCol;
-        int filaDespuesCaptura = fila + 2 * dirFila;
-        int colDespuesCaptura = col + 2 * dirCol;
+        // Direcciones posibles de captura diagonal
+        int direcciones[4][2] = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
         
-        // Verifica que la posición después de la captura esté dentro del tablero
-        if(filaDespuesCaptura >= 0 && filaDespuesCaptura < 8 && 
-           colDespuesCaptura >= 0 && colDespuesCaptura < 8){
-            if((filaDespuesCaptura + colDespuesCaptura) % 2 == 1){ // Casilla amarilla
-                // Verifica si hay ficha enemiga en medio y casilla destino libre
-                if(buscarFichaEnPosicion(filaCaptura, colCaptura, resultado)){
-                    if(resultado[0] != jugador){ // Es ficha enemiga
-                        if(!buscarFichaEnPosicion(filaDespuesCaptura, colDespuesCaptura, resultado)){
-                            return 1; // Hay una captura disponible
+        for(int d = 0; d < 4; d++){
+            int dirFila = direcciones[d][0];
+            int dirCol = direcciones[d][1];
+            // Si es peón, solo puede capturar hacia adelante
+            int filaCaptura = fila + dirFila;
+            int colCaptura = col + dirCol;
+            int filaDespuesCaptura = fila + 2 * dirFila;
+            int colDespuesCaptura = col + 2 * dirCol;
+            
+            // Verifica que la posición después de la captura esté dentro del tablero
+            if(filaDespuesCaptura >= 0 && filaDespuesCaptura < 8 && colDespuesCaptura >= 0 && colDespuesCaptura < 8){
+                if((filaDespuesCaptura + colDespuesCaptura) % 2 == 1){ // Casilla amarilla
+                    // Verifica si hay ficha enemiga en medio y casilla destino libre
+                    if(buscarFichaEnPosicion(filaCaptura, colCaptura, resultado)){
+                        if(resultado[0] != jugador){ // Es ficha enemiga
+                            if(!buscarFichaEnPosicion(filaDespuesCaptura, colDespuesCaptura, resultado)){
+                                return 1; // Hay una captura disponible
+                            }
                         }
                     }
                 }
             }
         }
-    }
-    
     return 0; // No hay capturas disponibles
 }
 
-// ============== PROCESAR CONSUMOS CONCATENADOS ==============
 void procesarConsumosConcatenados(int jugadorActual, int resultado[2]){
     int filaActual = fichas[jugadorActual][resultado[1]].fila;
     int colActual = fichas[jugadorActual][resultado[1]].columna;
@@ -579,11 +587,11 @@ void procesarConsumosConcatenados(int jugadorActual, int resultado[2]){
     while(capturasContinuas){
         // Verifica si hay más capturas disponibles desde la posición actual
         if(verificarCapturasDisponibles(jugadorActual, filaActual, colActual)){
+            promocionDama(jugadorActual, resultado[1]);
             mostrar_tablero();
             printf("\n¡Puedes realizar otra captura!\n");
             printf("Posicion actual de tu ficha: (%d, %d)\n", filaActual, colActual);
             printf("¿Deseas continuar capturando? (s/n): ");
-            
             scanf(" %c", &respuesta);
             while(getchar()!='\n');
             
@@ -651,102 +659,180 @@ void procesarConsumosConcatenados(int jugadorActual, int resultado[2]){
             capturasContinuas = 0;
         }
     }
+    promocionDama(jugadorActual, resultado[1]);
 }
 
-// ============== VERIFICAR FIN DE JUEGO ==============
 int verificarFinJuego(int jugadorActual, char nombres[2][150]){
-    int jugadorRival = (jugadorActual == 0) ? 1 : 0;
+    FILE *fHistorial;
+    int jugadorRival;
     int fichasActivas[2] = {0, 0};
-    
+
+    if(jugadorActual==0){
+        jugadorRival=1;
+    }else{
+        jugadorRival=0;
+    }
+
     // Cuenta las fichas activas de cada jugador
     for(int i = 0; i < Num_fichas; i++){
         if(fichas[0][i].activa == 1) fichasActivas[0]++;
         if(fichas[1][i].activa == 1) fichasActivas[1]++;
     }
-    
+    fHistorial=fopen("historial.bin", "ab");
     // Condición 1: El jugador rival no tiene fichas
     if(fichasActivas[jugadorRival] == 0){
         mostrar_tablero();
-        printf("\n========================================\n");
-        printf("   ¡JUEGO TERMINADO!\n");
+        printf("   JUEGO TERMINADO\n");
         printf("   Ganador: %s\n", nombres[jugadorActual]);
         printf("   Motivo: El oponente no tiene fichas\n");
         printf("========================================\n");
+        fwrite(&nombres[jugadorActual], sizeof(char), 150, fHistorial);
+        char motivo[] = "El oponente no tiene fichas";
+        fwrite(motivo, sizeof(char), strlen(motivo), fHistorial);
+        fclose(fHistorial);
         return 1;
     }
     
     // Condición 2: El jugador rival no puede moverse
-    if(!puedeMoverse(jugadorRival)){
+    if(!puedeMoverse(jugadorRival, 0, 0, 0, 0)){
         mostrar_tablero();
-        printf("\n========================================\n");
-        printf("   ¡JUEGO TERMINADO!\n");
+        printf("   JUEGO TERMINADO\n");
         printf("   Ganador: %s\n", nombres[jugadorActual]);
         printf("   Motivo: El oponente no tiene movimientos válidos\n");
         printf("========================================\n");
+        fwrite(&nombres[jugadorActual], sizeof(char), 150, fHistorial);
+        char motivo[] = "El oponente no tiene movimientos válidos";
+        fwrite(motivo, sizeof(char), strlen(motivo), fHistorial);
+        fclose(fHistorial);
         return 1;
     }
     
+    // Condición 3: Empate (Si ambos solo tienen una ficha)
+    if(fichasActivas[0] == 1 && fichasActivas[1] == 1){
+        mostrar_tablero();
+        printf("   JUEGO TERMINADO\n");
+        printf("   Resultado: Empate\n");
+        printf("   Motivo: Ambos jugadores solo tienen una ficha restante\n");
+        printf("========================================\n");
+        return 1;
+    }
     return 0; // El juego continúa
 }
 
-// ============== PUEDE MOVERSE ==============
-int puedeMoverse(int jugador){
+int puedeMoverse(int jugador, int notEndGame, int ficha, int fila, int columna){
     int resultado[2];
-    
-    // Revisa cada ficha activa del jugador
-    for(int i = 0; i < Num_fichas; i++){
-        if(fichas[jugador][i].activa == 0) continue;
-        
-        int fila = fichas[jugador][i].fila;
-        int col = fichas[jugador][i].columna;
-        int esDama = fichas[jugador][i].esDama;
-        
-        // Direcciones posibles de movimiento diagonal
-        int direcciones[4][2] = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
-        
-        for(int d = 0; d < 4; d++){
-            int dirFila = direcciones[d][0];
-            int dirCol = direcciones[d][1];
+    if(notEndGame==0){
+        // Revisa cada ficha activa del jugador
+        for(int i = 0; i < Num_fichas; i++){
+            if(fichas[jugador][i].activa == 0) continue;
             
-            // Si es peón, solo puede moverse hacia adelante
-            if(!esDama){
-                if(jugador == 0 && dirFila < 0) continue; // Jugador 0 solo hacia abajo
-                if(jugador == 1 && dirFila > 0) continue; // Jugador 1 solo hacia arriba
-            }
+            int fila = fichas[jugador][i].fila;
+            int col = fichas[jugador][i].columna;
+            int esDama = fichas[jugador][i].esDama;
             
-            // Verifica movimiento simple (1 casilla)
-            int nuevaFila = fila + dirFila;
-            int nuevaCol = col + dirCol;
+            // Direcciones posibles de movimiento diagonal
+            int direcciones[4][2] = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
             
-            if(nuevaFila >= 0 && nuevaFila < 8 && nuevaCol >= 0 && nuevaCol < 8){
-                if((nuevaFila + nuevaCol) % 2 == 1){ // Casilla amarilla
-                    if(!buscarFichaEnPosicion(nuevaFila, nuevaCol, resultado)){
-                        return 1; // Hay un movimiento simple disponible
+            for(int d = 0; d < 4; d++){
+                int dirFila = direcciones[d][0];
+                int dirCol = direcciones[d][1];
+                
+                // Si es peón, solo puede moverse hacia adelante
+                if(!esDama){
+                    if(jugador == 0 && dirFila < 0){
+                        continue; // Jugador 0 solo hacia abajo
+                    }
+                    if(jugador == 1 && dirFila > 0){
+                        continue; // Jugador 1 solo hacia arriba
                     }
                 }
-            }
-            
-            // Verifica movimiento de captura (2 casillas)
-            int filaCaptura = fila + dirFila;
-            int colCaptura = col + dirCol;
-            int filaDespuesCaptura = fila + 2 * dirFila;
-            int colDespuesCaptura = col + 2 * dirCol;
-            
-            if(filaDespuesCaptura >= 0 && filaDespuesCaptura < 8 && 
-               colDespuesCaptura >= 0 && colDespuesCaptura < 8){
-                if((filaDespuesCaptura + colDespuesCaptura) % 2 == 1){ // Casilla amarilla
-                    // Verifica si hay ficha enemiga en medio y casilla destino libre
-                    if(buscarFichaEnPosicion(filaCaptura, colCaptura, resultado)){
-                        if(resultado[0] != jugador){ // Es ficha enemiga
-                            if(!buscarFichaEnPosicion(filaDespuesCaptura, colDespuesCaptura, resultado)){
-                                return 1; // Hay un movimiento de captura disponible
+                
+                // Verifica movimiento simple (1 casilla)
+                int nuevaFila = fila + dirFila;
+                int nuevaCol = col + dirCol;
+                
+                if(nuevaFila >= 0 && nuevaFila < 8 && nuevaCol >= 0 && nuevaCol < 8){
+                    if((nuevaFila + nuevaCol) % 2 == 1){ // Casilla amarilla
+                        if(!buscarFichaEnPosicion(nuevaFila, nuevaCol, resultado)){
+                            return 1; // Hay un movimiento simple disponible
+                        }
+                    }
+                }
+                
+                // Verifica movimiento de captura (2 casillas)
+                int filaCaptura = fila + dirFila;
+                int colCaptura = col + dirCol;
+                int filaDespuesCaptura = fila + 2 * dirFila;
+                int colDespuesCaptura = col + 2 * dirCol;
+                
+                if(filaDespuesCaptura >= 0 && filaDespuesCaptura < 8 && colDespuesCaptura >= 0 && colDespuesCaptura < 8){
+                    if((filaDespuesCaptura + colDespuesCaptura) % 2 == 1){ // Casilla amarilla
+                        // Verifica si hay ficha enemiga en medio y casilla destino libre
+                        if(buscarFichaEnPosicion(filaCaptura, colCaptura, resultado)){
+                            if(resultado[0] != jugador){ // Es ficha enemiga
+                                if(!buscarFichaEnPosicion(filaDespuesCaptura, colDespuesCaptura, resultado)){
+                                    return 1; // Hay un movimiento de captura disponible
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }else if(notEndGame==1){
+        if(fichas[jugador][ficha].activa == 0) return 0;
+            int fila = fichas[jugador][ficha].fila;
+            int col = fichas[jugador][ficha].columna;
+            int esDama = fichas[jugador][ficha].esDama;
+            
+            // Direcciones posibles de movimiento diagonal
+            int direcciones[4][2] = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+            
+            for(int d = 0; d < 4; d++){
+                int dirFila = direcciones[d][0];
+                int dirCol = direcciones[d][1];
+                
+                // Si es peón, solo puede moverse hacia adelante
+                if(!esDama){
+                    if(jugador == 0 && dirFila < 0){
+                        continue; // Jugador 0 solo hacia abajo
+                    }
+                    if(jugador == 1 && dirFila > 0){
+                        continue; // Jugador 1 solo hacia arriba
+                    }
+                }
+                
+                // Verifica movimiento simple (1 casilla)
+                int nuevaFila = fila + dirFila;
+                int nuevaCol = col + dirCol;
+                
+                if(nuevaFila >= 0 && nuevaFila < 8 && nuevaCol >= 0 && nuevaCol < 8){
+                    if((nuevaFila + nuevaCol) % 2 == 1){ // Casilla amarilla
+                        if(!buscarFichaEnPosicion(nuevaFila, nuevaCol, resultado)){
+                            return 1; // Hay un movimiento simple disponible
+                        }
+                    }
+                }
+                
+                // Verifica movimiento de captura (2 casillas)
+                int filaCaptura = fila + dirFila;
+                int colCaptura = col + dirCol;
+                int filaDespuesCaptura = fila + 2 * dirFila;
+                int colDespuesCaptura = col + 2 * dirCol;
+                
+                if(filaDespuesCaptura >= 0 && filaDespuesCaptura < 8 && colDespuesCaptura >= 0 && colDespuesCaptura < 8){
+                    if((filaDespuesCaptura + colDespuesCaptura) % 2 == 1){ // Casilla amarilla
+                        // Verifica si hay ficha enemiga en medio y casilla destino libre
+                        if(buscarFichaEnPosicion(filaCaptura, colCaptura, resultado)){
+                            if(resultado[0] != jugador){ // Es ficha enemiga
+                                if(!buscarFichaEnPosicion(filaDespuesCaptura, colDespuesCaptura, resultado)){
+                                    return 1; // Hay un movimiento de captura disponible
+                                }
+                            }
+                        }
+                    }
+                }
+            }
     }
-    
     return 0; // No hay movimientos disponibles
 }
