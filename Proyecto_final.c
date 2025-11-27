@@ -31,7 +31,7 @@ int promocionDama(int jugadorActual, int indiceFicha);
 int consumirFicha(int filaOrigen, int colOrigen, int filaDestino, int colDestino, int jugadorActual);
 int verificarFinJuego(int jugadorActual, char nombres[2][150]);
 int puedeMoverse(int jugador, int notEndGame, int ficha, int fila, int columna);
-int verificarCapturasDisponibles(int jugador, int fila, int col);
+int verificarCapturasDisponibles(int jugador, int fila, int col, int concatenar);
 void procesarConsumosConcatenados(int jugadorActual, int resultado[2]);
 
 int main(){
@@ -513,40 +513,75 @@ int consumirFicha(int filaOrigen, int colOrigen, int filaDestino, int colDestino
     }
 }
 
-int verificarCapturasDisponibles(int jugador, int fila, int col){
+int verificarCapturasDisponibles(int jugador, int fila, int col, int concatenar){
     int resultado[2], esDama=0;
-    
+    if(concatenar==0){
     // Buscar si la ficha es dama
-    if(buscarFichaEnPosicion(fila, col, resultado)){
-        esDama = fichas[resultado[0]][resultado[1]].esDama;
-    }
-    
-    // Direcciones posibles de captura diagonal
-    int direcciones[4][2] = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
-    
-    for(int d = 0; d < 4; d++){
-        int dirFila = direcciones[d][0];
-        int dirCol = direcciones[d][1];
-        int filaCaptura = fila + dirFila;
-        int colCaptura = col + dirCol;
-        int filaDespuesCaptura = fila + 2 * dirFila;
-        int colDespuesCaptura = col + 2 * dirCol;
+        if(buscarFichaEnPosicion(fila, col, resultado)){
+            esDama = fichas[resultado[0]][resultado[1]].esDama;
+        }
         
-        // Verifica que la posición después de la captura esté dentro del tablero
-        if(filaDespuesCaptura >= 0 && filaDespuesCaptura < 8 && colDespuesCaptura >= 0 && colDespuesCaptura < 8){
-            if((filaDespuesCaptura + colDespuesCaptura) % 2 == 1){ // Casilla amarilla
-                // Verifica si hay ficha enemiga en medio y casilla destino libre
-                if(buscarFichaEnPosicion(filaCaptura, colCaptura, resultado)){
-                    if(resultado[0] != jugador){ // Es ficha enemiga
-                        if(!buscarFichaEnPosicion(filaDespuesCaptura, colDespuesCaptura, resultado)){
-                            return 1; // Hay una captura disponible
+        // Direcciones posibles de captura diagonal
+        int direcciones[4][2] = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+        
+        for(int d = 0; d < 4; d++){
+            int dirFila = direcciones[d][0];
+            int dirCol = direcciones[d][1];
+            // Si es peón, solo puede capturar hacia adelante
+            if(!esDama){
+                if(jugador == 0 && dirFila < 0){
+                    continue; // Jugador 0 solo hacia abajo
+                }
+                if(jugador == 1 && dirFila > 0){
+                    continue; // Jugador 1 solo hacia arriba
+                }
+            }
+            int filaCaptura = fila + dirFila;
+            int colCaptura = col + dirCol;
+            int filaDespuesCaptura = fila + 2 * dirFila;
+            int colDespuesCaptura = col + 2 * dirCol;
+            
+            // Verifica que la posición después de la captura esté dentro del tablero
+            if(filaDespuesCaptura >= 0 && filaDespuesCaptura < 8 && colDespuesCaptura >= 0 && colDespuesCaptura < 8){
+                if((filaDespuesCaptura + colDespuesCaptura) % 2 == 1){ // Casilla amarilla
+                    // Verifica si hay ficha enemiga en medio y casilla destino libre
+                    if(buscarFichaEnPosicion(filaCaptura, colCaptura, resultado)){
+                        if(resultado[0] != jugador){ // Es ficha enemiga
+                            if(!buscarFichaEnPosicion(filaDespuesCaptura, colDespuesCaptura, resultado)){
+                                return 1; // Hay una captura disponible
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }else if(concatenar==1){
+        // Direcciones posibles de captura diagonal
+        int direcciones[4][2] = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+        
+        for(int d = 0; d < 4; d++){
+            int dirFila = direcciones[d][0];
+            int dirCol = direcciones[d][1];
+            int filaCaptura = fila + dirFila;
+            int colCaptura = col + dirCol;
+            int filaDespuesCaptura = fila + 2 * dirFila;
+            int colDespuesCaptura = col + 2 * dirCol;
+            
+            // Verifica que la posición después de la captura esté dentro del tablero
+            if(filaDespuesCaptura >= 0 && filaDespuesCaptura < 8 && colDespuesCaptura >= 0 && colDespuesCaptura < 8){
+                if((filaDespuesCaptura + colDespuesCaptura) % 2 == 1){ // Casilla amarilla
+                    // Verifica si hay ficha enemiga en medio y casilla destino libre
+                    if(buscarFichaEnPosicion(filaCaptura, colCaptura, resultado)){
+                        if(resultado[0] != jugador){ // Es ficha enemiga
+                            if(!buscarFichaEnPosicion(filaDespuesCaptura, colDespuesCaptura, resultado)){
+                                return 1; // Hay una captura disponible
+                            }
                         }
                     }
                 }
             }
         }
     }
-    
     return 0; // No hay capturas disponibles
 }
 
@@ -558,7 +593,7 @@ void procesarConsumosConcatenados(int jugadorActual, int resultado[2]){
     
     while(capturasContinuas){
         // Verifica si hay más capturas disponibles desde la posición actual
-        if(verificarCapturasDisponibles(jugadorActual, filaActual, colActual)){
+        if(verificarCapturasDisponibles(jugadorActual, filaActual, colActual, 1)){
             mostrar_tablero();
             printf("\n¡Puedes realizar otra captura!\n");
             printf("Posicion actual de tu ficha: (%d, %d)\n", filaActual, colActual);
