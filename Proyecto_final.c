@@ -32,12 +32,12 @@ int promocionDama(int jugadorActual, int indiceFicha);
 int consumirFicha(int filaOrigen, int colOrigen, int filaDestino, int colDestino, int jugadorActual);
 int verificarFinJuego(int jugadorActual, char nombres[2][150]);
 int puedeMoverse(int jugador, int notEndGame, int ficha, int fila, int columna);
-int verificarCapturasDisponibles(int jugador, int fila, int col, int concatenar);
+int verificarCapturasDisponibles(int jugador, int fila, int col);
 void procesarConsumosConcatenados(int jugadorActual, int resultado[2]);
 
 int main(){
     char nombres[2][150], linea[200], nombreGanador[150], motivo[200];
-    int opcion, jugadorActual=0, gameOver=0, fichasActivas[2][Num_fichas];
+    int opcion, jugadorActual=0, gameOver=0, fichasActivas;
     int resultado[2]; //resultado[0]= jugador que pertenece, resultado[1]= indice de la ficha
     int coordsDest[2]; //coordsDest[0]= fila destino, coordsDest[1]= columna destino
     int intentoCaptura;
@@ -68,9 +68,14 @@ int main(){
                             fichas[jugadorActual][resultado[1]].fila = coordsDest[0];
                             fichas[jugadorActual][resultado[1]].columna = coordsDest[1];
                             printf("Ficha consumida y movida a (%d, %d)\n", coordsDest[0], coordsDest[1]);
-                            
+                            promocionDama(jugadorActual, resultado[1]);
                             // Procesar consumos concatenados
-                            procesarConsumosConcatenados(jugadorActual, resultado);
+                            fichas[jugadorActual][resultado[1]].primerConsumoRealizado = 1;
+                            while(verificarCapturasDisponibles(jugadorActual, fichas[jugadorActual][resultado[1]].fila, fichas[jugadorActual][resultado[1]].columna)){
+                                promocionDama(jugadorActual, resultado[1]);
+                                procesarConsumosConcatenados(jugadorActual, resultado);
+                                promocionDama(jugadorActual, resultado[1]);
+                            }
                         }
                     }
                     fichas[jugadorActual][resultado[1]].primerConsumoRealizado = 0;
@@ -91,9 +96,15 @@ int main(){
                             fichas[jugadorActual][resultado[1]].fila = coordsDest[0];
                             fichas[jugadorActual][resultado[1]].columna = coordsDest[1];
                             printf("Ficha consumida y movida a (%d, %d)\n", coordsDest[0], coordsDest[1]);
-                            
+                            promocionDama(jugadorActual, resultado[1]);
                             // Procesar consumos concatenados
-                            procesarConsumosConcatenados(jugadorActual, resultado);
+                            fichas[jugadorActual][resultado[1]].primerConsumoRealizado = 1;
+                            while(verificarCapturasDisponibles(jugadorActual, fichas[jugadorActual][resultado[1]].fila, fichas[jugadorActual][resultado[1]].columna)){
+                                promocionDama(jugadorActual, resultado[1]);
+                                procesarConsumosConcatenados(jugadorActual, resultado);
+                                promocionDama(jugadorActual, resultado[1]);
+                            }
+                            
                         }
                     }
                     fichas[jugadorActual][resultado[1]].primerConsumoRealizado = 0;
@@ -126,8 +137,8 @@ int main(){
             printf("\nHistorial de Victorias\n");
             while(fread(&nombreGanador, sizeof(char), 150, fHistorial)!=0){
                 fread(&motivo, sizeof(char), 200, fHistorial);
-                fread(fichasActivas[jugadorActual], sizeof(int), sizeof(fichasActivas), fHistorial);
-                printf("Ganador: %s\nMotivo: %s\n\n", nombreGanador, motivo);
+                fread(&fichasActivas, sizeof(int), 1, fHistorial);
+                printf("Ganador: %s\nMotivo: %s\nFichas activas: %d\n\n", nombreGanador, motivo, fichasActivas);
             }
             fclose(fHistorial);
             break;
@@ -333,7 +344,7 @@ void ingresarNombreJugadores(char nombres[2][150]){
 
 
 int moverFicha(int jugadorActual, int resultado[2], int dest[2]){
-    int filaOrigen, colOrigen, filaDestino, colDestino, encontrada, repetirSolicitud, moverse, distanciaFila, distanciaCol, filaMedio, colMedio;
+    int filaOrigen, colOrigen, filaDestino, colDestino, encontrada, repetirSolicitud, moverse, distanciaFila, distanciaCol, filaMedio, colMedio, dirFila;
     
     do{
         repetirSolicitud=0;
@@ -414,8 +425,8 @@ int moverFicha(int jugadorActual, int resultado[2], int dest[2]){
                 // Calcula la posición intermedia
                 filaMedio = (filaOrigen + filaDestino) / 2;
                 colMedio = (colOrigen + colDestino) / 2;
-                
-                                // Si NO es dama y NO ha hecho su primer consumo, debe capturar hacia adelante
+                dirFila = (filaDestino - filaOrigen) / 2;
+                // Si NO es dama y NO ha hecho su primer consumo, debe capturar hacia adelante
                 if(!fichas[jugadorActual][resultado[1]].esDama &&
                 fichas[jugadorActual][resultado[1]].primerConsumoRealizado == 0)
                 {
@@ -531,7 +542,7 @@ int consumirFicha(int filaOrigen, int colOrigen, int filaDestino, int colDestino
     }
 }
 
-int verificarCapturasDisponibles(int jugador, int fila, int col, int concatenar){
+int verificarCapturasDisponibles(int jugador, int fila, int col){
     int resultado[2], esDama=0;
     // Buscar si la ficha es dama
         if(buscarFichaEnPosicion(fila, col, resultado)){
@@ -545,14 +556,6 @@ int verificarCapturasDisponibles(int jugador, int fila, int col, int concatenar)
             int dirFila = direcciones[d][0];
             int dirCol = direcciones[d][1];
             // Si es peón, solo puede capturar hacia adelante
-            if(!esDama){
-                if(jugador == 0 && dirFila < 0){
-                    continue; // Jugador 0 solo hacia abajo
-                }
-                if(jugador == 1 && dirFila > 0){
-                    continue; // Jugador 1 solo hacia arriba
-                }
-            }
             int filaCaptura = fila + dirFila;
             int colCaptura = col + dirCol;
             int filaDespuesCaptura = fila + 2 * dirFila;
@@ -583,12 +586,12 @@ void procesarConsumosConcatenados(int jugadorActual, int resultado[2]){
     
     while(capturasContinuas){
         // Verifica si hay más capturas disponibles desde la posición actual
-        if(verificarCapturasDisponibles(jugadorActual, filaActual, colActual, 1)){
+        if(verificarCapturasDisponibles(jugadorActual, filaActual, colActual)){
+            promocionDama(jugadorActual, resultado[1]);
             mostrar_tablero();
             printf("\n¡Puedes realizar otra captura!\n");
             printf("Posicion actual de tu ficha: (%d, %d)\n", filaActual, colActual);
             printf("¿Deseas continuar capturando? (s/n): ");
-            
             scanf(" %c", &respuesta);
             while(getchar()!='\n');
             
@@ -656,6 +659,7 @@ void procesarConsumosConcatenados(int jugadorActual, int resultado[2]){
             capturasContinuas = 0;
         }
     }
+    promocionDama(jugadorActual, resultado[1]);
 }
 
 int verificarFinJuego(int jugadorActual, char nombres[2][150]){
@@ -674,7 +678,7 @@ int verificarFinJuego(int jugadorActual, char nombres[2][150]){
         if(fichas[0][i].activa == 1) fichasActivas[0]++;
         if(fichas[1][i].activa == 1) fichasActivas[1]++;
     }
-    fopen("historial.bin", "ab");
+    fHistorial=fopen("historial.bin", "ab");
     // Condición 1: El jugador rival no tiene fichas
     if(fichasActivas[jugadorRival] == 0){
         mostrar_tablero();
@@ -685,6 +689,7 @@ int verificarFinJuego(int jugadorActual, char nombres[2][150]){
         fwrite(&nombres[jugadorActual], sizeof(char), 150, fHistorial);
         char motivo[] = "El oponente no tiene fichas";
         fwrite(motivo, sizeof(char), strlen(motivo), fHistorial);
+        fclose(fHistorial);
         return 1;
     }
     
@@ -709,11 +714,6 @@ int verificarFinJuego(int jugadorActual, char nombres[2][150]){
         printf("   Resultado: Empate\n");
         printf("   Motivo: Ambos jugadores solo tienen una ficha restante\n");
         printf("========================================\n");
-        fwrite("Empate", sizeof(char), 6, fHistorial);
-        char motivo[] = "Ambos jugadores solo tienen una ficha restante";
-        fwrite(motivo, sizeof(char), strlen(motivo), fHistorial);
-        fwrite(fichasActivas[jugadorActual], sizeof(int), sizeof(fichasActivas), fHistorial);
-        fclose(fHistorial);
         return 1;
     }
     return 0; // El juego continúa
